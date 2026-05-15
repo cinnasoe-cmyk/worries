@@ -49,7 +49,7 @@
     <div class="uploadField">
       <label class="uploadButtonLabel">Profile picture upload
         <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
-        <input type="file" name="pfp_file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <input class="hiddenFileInput" type="file" name="pfp_file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none !important;">
         <em class="fileName" data-file-name>No file selected</em>
       </label>
       <% if (profile.pfp_url) { %>
@@ -83,7 +83,7 @@
         <div class="uploadField">
           <label class="uploadButtonLabel">Banner image upload
             <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
-            <input type="file" name="banner_file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <input class="hiddenFileInput" type="file" name="banner_file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none !important;">
             <em class="fileName" data-file-name>No file selected</em>
           </label>
           <% if (profile.banner_url) { %>
@@ -116,7 +116,7 @@
         <div class="uploadField <%= currentUser.is_vip ? '' : 'lockedUpload' %>">
           <label class="uploadButtonLabel">VIP song upload <small>MP3 or WAV</small>
           <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
-          <input type="file" name="music_file" accept="audio/mpeg,audio/mp3,audio/wav" <%= currentUser.is_vip ? '' : 'disabled' %>>
+          <input class="hiddenFileInput" type="file" name="music_file" accept="audio/mpeg,audio/mp3,audio/wav" <%= currentUser.is_vip ? '' : 'disabled' %> style="display:none !important;">
           <em class="fileName" data-file-name>No file selected</em>
         </label>
           <% if (profile.music_url && currentUser.is_vip) { %>
@@ -139,7 +139,7 @@
       <input name="url" placeholder="link URL" required>
       <label class="fileOnly uploadButtonLabel">Button icon upload
         <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
-        <input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <input class="hiddenFileInput" type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none !important;">
         <em class="fileName" data-file-name>No file selected</em>
       </label>
       <button class="secondary full" type="submit">add link</button>
@@ -151,7 +151,7 @@
           <input name="url" value="<%= link.url %>">
           <label class="fileOnly uploadButtonLabel">Change icon
           <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
-          <input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif">
+          <input class="hiddenFileInput" type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none !important;">
           <em class="fileName" data-file-name>No file selected</em>
         </label>
           <% if (link.icon_url) { %><div class="currentUpload smallIcon"><img src="<%= link.icon_url %>" alt="current icon"><span>icon saved</span><label class="check miniCheck"><input type="checkbox" name="clear_icon"> remove</label></div><% } %>

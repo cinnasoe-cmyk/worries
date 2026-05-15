@@ -96,3 +96,42 @@ ul { color:#d6d6d6; line-height:2; padding-left:20px; }
 .connectedDiscordCard strong { display:block; font-size:18px; letter-spacing:-.04em; }
 .connectedDiscordCard small { display:block; margin-top:3px; color:var(--muted); font-size:12px; font-weight:800; text-transform:lowercase; }
 @media (max-width:520px) { .discordConnectBox { align-items:flex-start; flex-direction:column; } .smallBtn { width:100%; } }
+
+.uploadField { display:grid; gap:10px; }
+.uploadField small { color:var(--muted); font-size:12px; font-weight:700; }
+.fileOnly input[type="file"], .uploadField input[type="file"] { padding:12px; cursor:pointer; }
+.currentUpload { display:flex; align-items:center; gap:10px; min-height:50px; background:#070707; border:1px solid #232323; border-radius:16px; padding:10px; color:var(--muted); font-size:12px; }
+.currentUpload img { width:42px; height:42px; border-radius:12px; object-fit:cover; border:1px solid #333; }
+.currentUpload.wide > span { width:74px; height:42px; border-radius:12px; background-size:cover; background-position:center; border:1px solid #333; flex:0 0 auto; }
+.currentUpload.audioSaved > span { width:42px; height:42px; border-radius:14px; display:grid; place-items:center; background:#fff; color:#000; font-weight:900; }
+.currentUpload em { color:var(--muted); font-style:normal; }
+.currentUpload.smallIcon img { width:32px; height:32px; border-radius:10px; }
+.miniCheck { margin-left:auto; font-size:12px !important; color:#aaa !important; }
+.lockedUpload { opacity:.65; }
+.colorRows { align-items:end; }
+.colorField { gap:9px !important; }
+.colorPick { height:48px; display:flex; align-items:center; gap:10px; background:#070707; border:1px solid #2e2e2e; border-radius:16px; padding:8px 10px; }
+.colorPick input[type="color"] { width:34px; height:34px; min-width:34px; border:0; padding:0; background:transparent; border-radius:10px; overflow:hidden; cursor:pointer; }
+.colorPick input[type="color"]::-webkit-color-swatch-wrapper { padding:0; }
+.colorPick input[type="color"]::-webkit-color-swatch { border:1px solid rgba(255,255,255,.35); border-radius:10px; }
+.colorPick input[type="color"]::-moz-color-swatch { border:1px solid rgba(255,255,255,.35); border-radius:10px; }
+.colorPick span { flex:1; color:#fff; font-weight:800; font-size:13px; letter-spacing:.02em; }
+.colorPick span::before { content:''; display:inline-block; width:8px; height:8px; border-radius:999px; background:var(--picked); margin-right:7px; box-shadow:0 0 18px var(--picked); }
+.volumeKnob { position:fixed; top:16px; left:16px; z-index:10; display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid rgba(255,255,255,.16); border-radius:999px; background:rgba(0,0,0,.56); backdrop-filter:blur(18px); box-shadow:0 18px 60px rgba(0,0,0,.35); }
+.volumeKnob button { width:36px; height:36px; border-radius:999px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); color:#fff; font-weight:900; cursor:pointer; display:grid; place-items:center; }
+.volumeKnob button.playing { background:#fff; color:#000; }
+.volumeKnob input[type="range"] { width:92px; accent-color:#fff; cursor:pointer; }
+.volumeKnob span { min-width:24px; color:#fff; font-size:12px; font-weight:900; opacity:.8; }
+@media (max-width:520px) { .volumeKnob { top:10px; left:10px; transform:scale(.9); transform-origin:top left; } .row2.colorRows { grid-template-columns:1fr; } }
+
+.fieldTitle { margin:0; color:#d7d7d7; font-size:14px; font-weight:800; }
+.pfpChoiceBox { display:grid; gap:10px; }
+.pfpOption { display:flex !important; grid-template-columns:none !important; align-items:center; gap:12px; min-height:74px; padding:13px; background:#070707; border:1px solid #252525; border-radius:18px; cursor:pointer; transition:border-color .18s ease, background .18s ease, opacity .18s ease; }
+.pfpOption.active { border-color:#fff; background:#101010; }
+.pfpOption.disabled { opacity:.45; cursor:not-allowed; filter:grayscale(1); }
+.pfpOption input { width:auto !important; accent-color:#fff; }
+.pfpOption img, .miniDiscordLock { width:42px; height:42px; border-radius:14px; object-fit:cover; border:1px solid #333; flex:0 0 auto; }
+.miniDiscordLock { display:grid; place-items:center; background:#333; color:#fff; font-weight:900; }
+.pfpOption span { min-width:0; }
+.pfpOption strong { display:block; color:#fff; font-size:14px; }
+.pfpOption small { display:block; margin-top:3px; color:var(--muted); font-size:12px; line-height:1.35; }

@@ -9,13 +9,16 @@ const bcrypt = require('bcryptjs');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const slugify = require('slugify');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_PATH = process.env.DATA_PATH || path.join(__dirname, 'db', 'data.json');
 const DISCORD_API = 'https://discord.com/api/v10';
+const UPLOAD_ROOT = path.join(__dirname, 'public', 'uploads');
 
 fs.mkdirSync(path.dirname(DATA_PATH), { recursive: true });
+fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
 
 function emptyData() {
   return {
@@ -77,6 +80,46 @@ function requireAuth(req, res, next) {
   next();
 }
 
+const uploadStorage = multer.diskStorage({
+  destination(req, file, cb) {
+    let folder = 'misc';
+    if (file.fieldname === 'pfp_file' || file.fieldname === 'banner_file' || file.fieldname === 'icon_file') folder = 'images';
+    if (file.fieldname === 'music_file') folder = 'audio';
+    const dest = path.join(UPLOAD_ROOT, folder);
+    fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
+  },
+  filename(req, file, cb) {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const safeName = crypto.randomBytes(16).toString('hex');
+    cb(null, `${Date.now()}-${safeName}${ext}`);
+  }
+});
+
+function isAllowedUpload(file) {
+  const imageTypes = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif']);
+  const audioTypes = new Set(['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave']);
+
+  if (file.fieldname === 'music_file') return audioTypes.has(file.mimetype);
+  return imageTypes.has(file.mimetype);
+}
+
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    if (!isAllowedUpload(file)) return cb(new Error('Invalid file type.'));
+    cb(null, true);
+  }
+});
+
+function fileUrl(file) {
+  if (!file) return '';
+  const rel = path.relative(path.join(__dirname, 'public'), file.path).split(path.sep).join('/');
+  return `/${rel}`;
+}
+
+
 function cleanUsername(input) {
   return slugify(String(input || ''), { lower: true, strict: true }).slice(0, 24);
 }
@@ -126,6 +169,7 @@ function createDefaultProfile(userId, username) {
     display_name: username,
     bio: 'make your page yours.',
     pfp_url: '',
+    pfp_source: 'upload',
     banner_url: '',
     music_url: '',
     discord_id: '',
@@ -239,15 +283,49 @@ app.get('/dashboard', requireAuth, (req, res) => {
   res.render('dashboard', { title: 'dashboard', profile, links, saved: req.query.saved === '1', error: req.query.error || '' });
 });
 
-app.post('/dashboard/profile', requireAuth, (req, res) => {
+app.post('/dashboard/profile', requireAuth, upload.fields([
+  { name: 'pfp_file', maxCount: 1 },
+  { name: 'banner_file', maxCount: 1 },
+  { name: 'music_file', maxCount: 1 }
+]), (req, res) => {
   const profile = getProfile(req.session.user.id) || createDefaultProfile(req.session.user.id, req.session.user.username);
   const vip = req.session.user.is_vip;
 
   profile.display_name = String(req.body.display_name || '').slice(0, 60);
   profile.bio = String(req.body.bio || '').slice(0, 220);
-  profile.pfp_url = normalizeUrl(req.body.pfp_url);
-  profile.banner_url = normalizeUrl(req.body.banner_url);
-  profile.music_url = vip ? normalizeUrl(req.body.music_url) : '';
+
+  const pfpUpload = req.files?.pfp_file?.[0];
+  const bannerUpload = req.files?.banner_file?.[0];
+  const musicUpload = req.files?.music_file?.[0];
+
+  const requestedPfpSource = String(req.body.pfp_source || 'upload');
+  const canUseDiscordPfp = Boolean(profile.discord_id && profile.discord_avatar_url);
+
+  if (pfpUpload) {
+    profile.pfp_url = fileUrl(pfpUpload);
+    profile.pfp_source = 'upload';
+  }
+
+  if (requestedPfpSource === 'discord' && canUseDiscordPfp) {
+    profile.pfp_source = 'discord';
+  } else if (requestedPfpSource === 'upload') {
+    profile.pfp_source = 'upload';
+  }
+
+  if (profile.pfp_source === 'discord' && !canUseDiscordPfp) {
+    profile.pfp_source = 'upload';
+  }
+  if (bannerUpload) profile.banner_url = fileUrl(bannerUpload);
+  if (vip && musicUpload) profile.music_url = fileUrl(musicUpload);
+
+  if (req.body.clear_pfp) {
+    profile.pfp_url = '';
+    if (profile.pfp_source !== 'discord') profile.pfp_source = 'upload';
+  }
+  if (req.body.clear_banner) profile.banner_url = '';
+  if (vip && req.body.clear_music) profile.music_url = '';
+  if (!vip) profile.music_url = '';
+
   profile.discord_status = String(req.body.discord_status || profile.discord_status || 'offline').slice(0, 20);
   profile.font_family = vip ? String(req.body.font_family || 'Inter').slice(0, 80) : 'Inter';
   profile.background_color = String(req.body.background_color || '#050505').slice(0, 20);
@@ -338,11 +416,12 @@ app.post('/dashboard/discord/disconnect', requireAuth, (req, res) => {
   profile.discord_avatar_url = '';
   profile.discord_connected_at = '';
   profile.discord_status = 'offline';
+  if (profile.pfp_source === 'discord') profile.pfp_source = 'upload';
   saveData();
   res.redirect('/dashboard?saved=1');
 });
 
-app.post('/dashboard/links/add', requireAuth, (req, res) => {
+app.post('/dashboard/links/add', requireAuth, upload.single('icon_file'), (req, res) => {
   const links = getLinks(req.session.user.id);
   if (!req.session.user.is_vip && links.length >= 5) return res.redirect('/pricing');
 
@@ -351,7 +430,7 @@ app.post('/dashboard/links/add', requireAuth, (req, res) => {
     user_id: req.session.user.id,
     title: String(req.body.title || 'new link').slice(0, 40),
     url: normalizeUrl(req.body.url),
-    icon_url: normalizeUrl(req.body.icon_url),
+    icon_url: req.file ? fileUrl(req.file) : '',
     position: links.length + 1,
     is_visible: 1,
     created_at: new Date().toISOString()
@@ -361,14 +440,15 @@ app.post('/dashboard/links/add', requireAuth, (req, res) => {
   res.redirect('/dashboard?saved=1');
 });
 
-app.post('/dashboard/links/:id/update', requireAuth, (req, res) => {
+app.post('/dashboard/links/:id/update', requireAuth, upload.single('icon_file'), (req, res) => {
   const linkId = Number(req.params.id);
   const link = data.links.find(item => item.id === linkId && item.user_id === req.session.user.id);
 
   if (link) {
     link.title = String(req.body.title || '').slice(0, 40);
     link.url = normalizeUrl(req.body.url);
-    link.icon_url = normalizeUrl(req.body.icon_url);
+    if (req.file) link.icon_url = fileUrl(req.file);
+    if (req.body.clear_icon) link.icon_url = '';
     link.position = Number(req.body.position || 0);
     link.is_visible = boolNum(req.body.is_visible);
     saveData();
@@ -407,6 +487,14 @@ app.get('/:username', (req, res, next) => {
   const username = cleanUsername(req.params.username);
   if (isReservedSlug(username)) return next();
   return renderProfilePage(req, res, username);
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (err.message === 'Invalid file type.' || err.code === 'LIMIT_FILE_SIZE') {
+    return res.redirect('/dashboard?error=upload_failed');
+  }
+  next(err);
 });
 
 app.use((req, res) => res.status(404).render('error', { title: 'not found', message: 'Page not found.' }));

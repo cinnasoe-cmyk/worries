@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body.publicPage { background: <%= profile.background_color %>; color: <%= profile.text_color %>; font-family: <%= profile.font_family || 'Inter' %>, Inter, Arial, sans-serif; }
+    .publicCard { --accent: <%= profile.accent_color %>; }
+  </style>
+</head>
+<body class="publicPage">
+  <% if (profile.music_url) { %>
+    <audio id="pageAudio" loop src="<%= profile.music_url %>"></audio>
+    <button class="musicToggle" data-music-toggle>play music</button>
+  <% } %>
+  <main class="publicWrap">
+    <section class="publicCard">
+      <% if (profile.banner_url) { %><div class="publicBanner" style="background-image:url('<%= profile.banner_url %>')"></div><% } %>
+      <img class="publicAvatar" src="<%= profile.pfp_url || '/img/default-avatar.svg' %>" onerror="this.src='/img/default-avatar.svg'" alt="profile picture">
+      <h1><%= profile.display_name || user.username %></h1>
+      <p class="publicUser">@<%= user.username %></p>
+      <p class="publicBio"><%= profile.bio %></p>
+      <% if (profile.discord_id) { %><p class="discordLine"><span class="dot <%= profile.discord_status %>"></span><%= profile.discord_id %></p><% } %>
+      <div class="publicLinks">
+        <% links.forEach(link => { %>
+          <a class="publicBtn <%= profile.button_style %>" href="<%= link.url %>" target="_blank" rel="noopener noreferrer">
+            <% if (link.icon_url) { %><img src="<%= link.icon_url %>" alt=""><% } %>
+            <span><%= link.title %></span>
+          </a>
+        <% }) %>
+      </div>
+      <% if (profile.show_views) { %><p class="views"><%= profile.view_count %> views</p><% } %>
+      <a class="madeWith" href="/">made with worries</a>
+    </section>
+  </main>
+  <script src="/js/app.js"></script>
+</body>
+</html>

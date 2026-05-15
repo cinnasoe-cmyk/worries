@@ -1,0 +1,12 @@
+<%- include('partials/head') %>
+<section class="authBox">
+  <h1>login</h1>
+  <% if (error) { %><p class="error"><%= error %></p><% } %>
+  <form method="post" action="/login" class="form">
+    <input name="email" type="email" placeholder="email" required>
+    <input name="password" type="password" placeholder="password" required>
+    <button class="primary full" type="submit">login</button>
+  </form>
+  <p class="small">Need an account? <a href="/register">create one</a></p>
+</section>
+<%- include('partials/foot') %>

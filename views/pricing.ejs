@@ -1,0 +1,25 @@
+<%- include('partials/head') %>
+<section class="page">
+  <p class="eyebrow">vip</p>
+  <h1>upgrade your worries page.</h1>
+  <div class="pricing">
+    <div class="priceCard">
+      <h2>free</h2>
+      <p class="price">$0</p>
+      <ul><li>Up to 5 links</li><li>Custom profile picture</li><li>Basic profile styling</li><li>Public worries page</li></ul>
+      <a class="secondary full" href="/register">start free</a>
+    </div>
+    <div class="priceCard featured">
+      <h2>vip</h2>
+      <p class="price">$4.99/mo</p>
+      <ul><li>Unlimited links</li><li>Profile music</li><li>Custom fonts</li><li>Advanced colors</li><li>Future badges/effects</li></ul>
+      <% if (currentUser) { %>
+        <form method="post" action="/vip/demo-upgrade"><button class="primary full" type="submit">demo upgrade</button></form>
+      <% } else { %>
+        <a class="primary full" href="/register">create account</a>
+      <% } %>
+      <p class="tiny">Demo button unlocks VIP locally. Replace with a real payment provider later.</p>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

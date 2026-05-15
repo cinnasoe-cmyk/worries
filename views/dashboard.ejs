@@ -1,0 +1,71 @@
+<%- include('partials/head') %>
+<section class="dashHead">
+  <div>
+    <p class="eyebrow">dashboard</p>
+    <h1>edit your worries page.</h1>
+    <p>Your public page: <a href="/u/<%= currentUser.username %>" target="_blank"><%= baseUrl %>/u/<%= currentUser.username %></a></p>
+  </div>
+  <div class="badge"><%= currentUser.is_vip ? 'VIP' : 'FREE' %></div>
+</section>
+<% if (saved) { %><p class="success">saved.</p><% } %>
+<section class="dashboardGrid">
+  <form method="post" action="/dashboard/profile" class="panel form">
+    <h2>profile</h2>
+    <label>Display name<input name="display_name" value="<%= profile.display_name || '' %>" maxlength="60"></label>
+    <label>Bio<textarea name="bio" maxlength="220"><%= profile.bio || '' %></textarea></label>
+    <label>Profile picture URL<input name="pfp_url" value="<%= profile.pfp_url || '' %>" placeholder="https://..."></label>
+    <label>Banner image URL<input name="banner_url" value="<%= profile.banner_url || '' %>" placeholder="https://..."></label>
+    <label>Discord ID or username<input name="discord_id" value="<%= profile.discord_id || '' %>" placeholder="your Discord"></label>
+    <label>Status
+      <select name="discord_status">
+        <% ['online','idle','dnd','offline'].forEach(s => { %>
+          <option value="<%= s %>" <%= profile.discord_status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <div class="row2">
+      <label>Background<input type="color" name="background_color" value="<%= profile.background_color || '#050505' %>"></label>
+      <label>Text<input type="color" name="text_color" value="<%= profile.text_color || '#ffffff' %>"></label>
+      <label>Accent<input type="color" name="accent_color" value="<%= profile.accent_color || '#ffffff' %>"></label>
+    </div>
+    <label>Button style
+      <select name="button_style">
+        <% ['glass','solid','outline'].forEach(s => { %>
+          <option value="<%= s %>" <%= profile.button_style === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>VIP font
+      <input name="font_family" value="<%= profile.font_family || 'Inter' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="Inter, Arial, serif">
+    </label>
+    <label>VIP music URL
+      <input name="music_url" value="<%= profile.music_url || '' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="direct .mp3 URL">
+    </label>
+    <label class="check"><input type="checkbox" name="show_views" <%= profile.show_views ? 'checked' : '' %>> show view count</label>
+    <button class="primary full" type="submit">save profile</button>
+  </form>
+
+  <div class="panel">
+    <h2>links</h2>
+    <form method="post" action="/dashboard/links/add" class="form compact">
+      <input name="title" placeholder="button title" required>
+      <input name="url" placeholder="link URL" required>
+      <input name="icon_url" placeholder="optional icon URL">
+      <button class="secondary full" type="submit">add link</button>
+    </form>
+    <div class="linkEditor">
+      <% links.forEach(link => { %>
+        <form class="linkEdit" method="post" action="/dashboard/links/<%= link.id %>/update">
+          <input name="title" value="<%= link.title %>">
+          <input name="url" value="<%= link.url %>">
+          <input name="icon_url" value="<%= link.icon_url || '' %>" placeholder="icon URL">
+          <input name="position" type="number" value="<%= link.position %>">
+          <label class="check"><input name="is_visible" type="checkbox" <%= link.is_visible ? 'checked' : '' %>> visible</label>
+          <button class="ghostButton" type="submit">save</button>
+        </form>
+        <form method="post" action="/dashboard/links/<%= link.id %>/delete"><button class="delete" type="submit">delete</button></form>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>

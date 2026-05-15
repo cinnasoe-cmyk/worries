@@ -135,3 +135,75 @@ ul { color:#d6d6d6; line-height:2; padding-left:20px; }
 .pfpOption span { min-width:0; }
 .pfpOption strong { display:block; color:#fff; font-size:14px; }
 .pfpOption small { display:block; margin-top:3px; color:var(--muted); font-size:12px; line-height:1.35; }
+
+.uploadButtonLabel {
+  display:grid !important;
+  gap:9px !important;
+  color:#d7d7d7;
+  font-size:14px;
+  font-weight:800;
+}
+.uploadButtonLabel input[type="file"] {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0 !important;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0, 0, 0, 0);
+  white-space:nowrap;
+  border:0;
+}
+.uploadButton {
+  width:100%;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  border:1px solid #303030;
+  border-radius:16px;
+  background:linear-gradient(180deg, #0f0f0f, #070707);
+  color:#fff;
+  font-weight:900;
+  text-transform:lowercase;
+  cursor:pointer;
+  transition:border-color .18s ease, transform .18s ease, background .18s ease;
+}
+.uploadButton:hover {
+  border-color:#fff;
+  transform:translateY(-1px);
+  background:#111;
+}
+.uploadButtonLabel input[type="file"]:focus-visible + .fileName,
+.uploadButtonLabel:focus-within .uploadButton {
+  outline:2px solid rgba(255,255,255,.65);
+  outline-offset:3px;
+}
+.clipIcon {
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:#fff;
+  color:#000;
+  font-size:13px;
+  line-height:1;
+}
+.fileName {
+  color:var(--muted);
+  font-style:normal;
+  font-size:12px;
+  font-weight:700;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.lockedUpload .uploadButton,
+.uploadButtonLabel input[type="file"]:disabled ~ .uploadButton,
+.uploadButtonLabel:has(input[type="file"]:disabled) .uploadButton {
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;
+}

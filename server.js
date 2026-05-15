@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -12,6 +13,7 @@ const slugify = require('slugify');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_PATH = process.env.DATA_PATH || path.join(__dirname, 'db', 'data.json');
+const DISCORD_API = 'https://discord.com/api/v10';
 
 fs.mkdirSync(path.dirname(DATA_PATH), { recursive: true });
 
@@ -79,6 +81,16 @@ function cleanUsername(input) {
   return slugify(String(input || ''), { lower: true, strict: true }).slice(0, 24);
 }
 
+const RESERVED_SLUGS = new Set([
+  '', 'u', 'auth', 'dashboard', 'login', 'logout', 'register', 'pricing', 'about',
+  'vip', 'api', 'public', 'css', 'js', 'img', 'assets', 'admin', 'settings', 'help',
+  'terms', 'privacy', 'favicon.ico', 'robots.txt'
+]);
+
+function isReservedSlug(username) {
+  return RESERVED_SLUGS.has(cleanUsername(username));
+}
+
 function normalizeUrl(url) {
   url = String(url || '').trim();
   if (!url) return '';
@@ -117,6 +129,10 @@ function createDefaultProfile(userId, username) {
     banner_url: '',
     music_url: '',
     discord_id: '',
+    discord_username: '',
+    discord_global_name: '',
+    discord_avatar_url: '',
+    discord_connected_at: '',
     discord_status: 'offline',
     font_family: 'Inter',
     background_color: '#050505',
@@ -128,6 +144,30 @@ function createDefaultProfile(userId, username) {
   };
   data.profiles.push(profile);
   return profile;
+}
+
+function discordRedirectUri() {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  return `${baseUrl.replace(/\/$/, '')}/auth/discord/callback`;
+}
+
+function discordAvatarUrl(discordUser) {
+  if (!discordUser.avatar) return '';
+  const ext = discordUser.avatar.startsWith('a_') ? 'gif' : 'png';
+  return `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${ext}?size=128`;
+}
+
+function renderProfilePage(req, res, username) {
+  username = cleanUsername(username);
+  const user = getUserByUsername(username);
+  if (!user) return res.status(404).render('error', { title: 'not found', message: 'That worries page does not exist.' });
+
+  const profile = getProfile(user.id) || createDefaultProfile(user.id, user.username);
+  profile.view_count = Number(profile.view_count || 0) + 1;
+  saveData();
+
+  const links = getLinks(user.id).filter(link => link.is_visible);
+  res.render('profile', { title: `${profile.display_name || user.username} on worries`, user, profile, links });
 }
 
 app.get('/', (req, res) => res.render('index', { title: 'worries' }));
@@ -143,6 +183,10 @@ app.post('/register', async (req, res) => {
 
     if (!email || !username || password.length < 6) {
       return res.render('register', { title: 'create account', error: 'Use a real email, username, and a password with at least 6 characters.' });
+    }
+
+    if (isReservedSlug(username)) {
+      return res.render('register', { title: 'create account', error: 'That username is reserved. Choose another one.' });
     }
 
     if (getUserByEmail(email) || getUserByUsername(username)) {
@@ -192,7 +236,7 @@ app.post('/logout', (req, res) => {
 app.get('/dashboard', requireAuth, (req, res) => {
   const profile = getProfile(req.session.user.id) || createDefaultProfile(req.session.user.id, req.session.user.username);
   const links = getLinks(req.session.user.id);
-  res.render('dashboard', { title: 'dashboard', profile, links, saved: req.query.saved === '1' });
+  res.render('dashboard', { title: 'dashboard', profile, links, saved: req.query.saved === '1', error: req.query.error || '' });
 });
 
 app.post('/dashboard/profile', requireAuth, (req, res) => {
@@ -204,8 +248,7 @@ app.post('/dashboard/profile', requireAuth, (req, res) => {
   profile.pfp_url = normalizeUrl(req.body.pfp_url);
   profile.banner_url = normalizeUrl(req.body.banner_url);
   profile.music_url = vip ? normalizeUrl(req.body.music_url) : '';
-  profile.discord_id = String(req.body.discord_id || '').trim().slice(0, 40);
-  profile.discord_status = String(req.body.discord_status || 'offline').slice(0, 20);
+  profile.discord_status = String(req.body.discord_status || profile.discord_status || 'offline').slice(0, 20);
   profile.font_family = vip ? String(req.body.font_family || 'Inter').slice(0, 80) : 'Inter';
   profile.background_color = String(req.body.background_color || '#050505').slice(0, 20);
   profile.text_color = String(req.body.text_color || '#ffffff').slice(0, 20);
@@ -213,6 +256,88 @@ app.post('/dashboard/profile', requireAuth, (req, res) => {
   profile.button_style = String(req.body.button_style || 'glass').slice(0, 20);
   profile.show_views = boolNum(req.body.show_views);
 
+  saveData();
+  res.redirect('/dashboard?saved=1');
+});
+
+app.get('/auth/discord', requireAuth, (req, res) => {
+  if (!process.env.DISCORD_CLIENT_ID || !process.env.DISCORD_CLIENT_SECRET) {
+    return res.redirect('/dashboard?error=discord_env_missing');
+  }
+
+  const state = crypto.randomBytes(24).toString('hex');
+  req.session.discordOAuthState = state;
+
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID,
+    redirect_uri: discordRedirectUri(),
+    response_type: 'code',
+    scope: 'identify',
+    state
+  });
+
+  res.redirect(`${DISCORD_API}/oauth2/authorize?${params.toString()}`);
+});
+
+app.get('/auth/discord/callback', requireAuth, async (req, res) => {
+  try {
+    const code = String(req.query.code || '');
+    const state = String(req.query.state || '');
+
+    if (!code || !state || state !== req.session.discordOAuthState) {
+      return res.redirect('/dashboard?error=discord_state');
+    }
+
+    delete req.session.discordOAuthState;
+
+    const tokenBody = new URLSearchParams({
+      client_id: process.env.DISCORD_CLIENT_ID,
+      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: discordRedirectUri()
+    });
+
+    const tokenResponse = await fetch(`${DISCORD_API}/oauth2/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: tokenBody
+    });
+
+    if (!tokenResponse.ok) throw new Error(`Discord token failed: ${tokenResponse.status}`);
+    const tokenData = await tokenResponse.json();
+
+    const userResponse = await fetch(`${DISCORD_API}/users/@me`, {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+
+    if (!userResponse.ok) throw new Error(`Discord user failed: ${userResponse.status}`);
+    const discordUser = await userResponse.json();
+
+    const profile = getProfile(req.session.user.id) || createDefaultProfile(req.session.user.id, req.session.user.username);
+    profile.discord_id = discordUser.id;
+    profile.discord_username = discordUser.username || '';
+    profile.discord_global_name = discordUser.global_name || '';
+    profile.discord_avatar_url = discordAvatarUrl(discordUser);
+    profile.discord_connected_at = new Date().toISOString();
+    profile.discord_status = 'connected';
+
+    saveData();
+    res.redirect('/dashboard?saved=1');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/dashboard?error=discord_connect_failed');
+  }
+});
+
+app.post('/dashboard/discord/disconnect', requireAuth, (req, res) => {
+  const profile = getProfile(req.session.user.id) || createDefaultProfile(req.session.user.id, req.session.user.username);
+  profile.discord_id = '';
+  profile.discord_username = '';
+  profile.discord_global_name = '';
+  profile.discord_avatar_url = '';
+  profile.discord_connected_at = '';
+  profile.discord_status = 'offline';
   saveData();
   res.redirect('/dashboard?saved=1');
 });
@@ -270,17 +395,18 @@ app.post('/vip/demo-upgrade', requireAuth, (req, res) => {
   res.redirect('/dashboard?saved=1');
 });
 
+// Old /u/name links still work, but now they redirect to /name.
 app.get('/u/:username', (req, res) => {
   const username = cleanUsername(req.params.username);
-  const user = getUserByUsername(username);
-  if (!user) return res.status(404).render('error', { title: 'not found', message: 'That worries page does not exist.' });
+  res.redirect(301, `/${username}`);
+});
 
-  const profile = getProfile(user.id) || createDefaultProfile(user.id, user.username);
-  profile.view_count = Number(profile.view_count || 0) + 1;
-  saveData();
-
-  const links = getLinks(user.id).filter(link => link.is_visible);
-  res.render('profile', { title: `${profile.display_name || user.username} on worries`, user, profile, links });
+// Clean profile URLs: worries.uk/emo instead of worries.uk/u/emo.
+// Keep this near the bottom so it does not steal routes like /dashboard or /pricing.
+app.get('/:username', (req, res, next) => {
+  const username = cleanUsername(req.params.username);
+  if (isReservedSlug(username)) return next();
+  return renderProfilePage(req, res, username);
 });
 
 app.use((req, res) => res.status(404).render('error', { title: 'not found', message: 'Page not found.' }));

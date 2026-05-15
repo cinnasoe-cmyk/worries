@@ -214,7 +214,7 @@ function renderProfilePage(req, res, username) {
   res.render('profile', { title: `${profile.display_name || user.username} on worries`, user, profile, links });
 }
 
-app.get('/', (req, res) => res.render('index', { title: 'worries' }));
+app.get('/', (req, res) => res.render('index', { title: 'worries | connect with ease' }));
 app.get('/about', (req, res) => res.render('about', { title: 'about worries' }));
 app.get('/pricing', (req, res) => res.render('pricing', { title: 'worries vip' }));
 

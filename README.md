@@ -1,23 +1,27 @@
 # worries
 
-A black-and-white Linktree-style website for online people. Built with Node, Express, EJS, SQLite, and sessions.
+A black-and-white, customizable link-in-bio website for online profiles.
 
 ## Features
 
-- Landing page for `worries`
-- Register/login/logout
-- Dashboard profile editor
-- Public pages at `/u/username`
+- Create account / login
+- Public pages like `/username` with old `/u/username` links redirecting
 - Custom profile picture URL
 - Custom banner URL
 - Custom bio
-- Custom buttons/links
-- Optional custom icons for buttons
-- Manual Discord status display
+- Custom link buttons
+- Optional custom button icons
+- Discord OAuth connection for showing a connected Discord account
 - Free/VIP system
-- VIP-only custom fonts and music URL
-- Basic view counter
-- Mobile-friendly black/white aesthetic
+- VIP-only music URL
+- VIP-only custom font field
+- Landing page, about page, and VIP pricing page
+
+## Why this fixed version exists
+
+The first version used `better-sqlite3`. Render tried to build it with Node `v24.14.1`, and that native package failed to compile.
+
+This version removes `better-sqlite3` and `connect-sqlite3`, so Render does not need to compile native SQLite code.
 
 ## Run locally
 
@@ -33,39 +37,49 @@ Open:
 http://localhost:3000
 ```
 
-## Render deployment
+## Deploy on Render
 
-1. Push this folder to GitHub.
-2. Create a new Render Web Service.
-3. Connect the GitHub repo.
-4. Set build command:
-
-```bash
-npm install
-```
-
-5. Set start command:
-
-```bash
-npm start
-```
-
-6. Add environment variables:
+Use these settings:
 
 ```text
-SESSION_SECRET=make-this-a-long-random-secret
-BASE_URL=https://your-render-url.onrender.com
-NODE_ENV=production
+Build Command: npm install
+Start Command: npm start
 ```
 
-## Important Render note
+Environment variables:
 
-This starter uses SQLite because it is simple. On Render, normal app storage can reset when the service redeploys unless you use a persistent disk. For a real public website, upgrade the database to PostgreSQL or attach a Render persistent disk.
+```text
+NODE_ENV=production
+SESSION_SECRET=make-this-a-long-random-secret
+BASE_URL=https://your-render-url.onrender.com
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-client-secret
+```
 
-## VIP payments
+## Discord setup
 
-The VIP button is currently a demo upgrade button. Replace `/vip/demo-upgrade` with a real payment provider later, such as Stripe, Coinbase Commerce, PayPal, or another processor.
+Create an app in the Discord Developer Portal, open OAuth2, and add this redirect URL exactly:
 
-## Uploads
+```text
+https://your-render-url.onrender.com/auth/discord/callback
+```
 
-This starter uses image/song URLs instead of file uploads. That is better for Render because local uploads can disappear without persistent storage. Later, use Cloudinary, UploadThing, S3, or another file storage service for profile pictures, banners, icons, and music files.
+For local testing, also add:
+
+```text
+http://localhost:3000/auth/discord/callback
+```
+
+The site uses the `identify` scope so users can connect their Discord identity. Live Discord presence/status requires a Discord bot/gateway setup later.
+
+Optional:
+
+```text
+DATA_PATH=/opt/render/project/src/db/data.json
+```
+
+## Important database note
+
+This starter version stores accounts/profiles in `db/data.json` so it can deploy cleanly without native SQLite build errors.
+
+For a real public website, switch to PostgreSQL later, because Render free services can lose local file changes after redeploys unless you use persistent storage.

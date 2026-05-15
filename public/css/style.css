@@ -76,3 +76,23 @@ ul { color:#d6d6d6; line-height:2; padding-left:20px; }
 .musicToggle { position:fixed; top:16px; right:16px; z-index:5; background:#fff; color:#000; border:0; border-radius:999px; padding:10px 14px; font-weight:900; cursor:pointer; }
 .footer { width:min(1120px, calc(100% - 32px)); margin:0 auto; padding:28px 0; color:#777; font-size:14px; }
 @media (max-width:800px) { .hero, .grid3, .pricing, .dashboardGrid { grid-template-columns:1fr; } .nav { align-items:flex-start; } .nav nav { flex-wrap:wrap; justify-content:flex-end; } .dashHead { align-items:flex-start; flex-direction:column; } }
+
+.discordConnectBox { display:flex; justify-content:space-between; align-items:center; gap:14px; background:#080808; border:1px solid #232323; border-radius:22px; padding:14px; }
+.discordLeft { display:flex; align-items:center; gap:12px; min-width:0; }
+.discordLeft strong { display:block; color:#fff; font-size:15px; }
+.discordLeft p { margin:3px 0 0; color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:190px; }
+.discordAvatar { width:48px; height:48px; border-radius:16px; object-fit:cover; background:#111; border:1px solid #303030; flex:0 0 auto; }
+.discordAvatar.empty, .discordFallback { display:grid; place-items:center; background:#3b3b3b; color:#fff; font-weight:900; }
+.smallBtn { padding:10px 13px; font-size:12px; white-space:nowrap; }
+.advancedBox { border:1px solid #242424; border-radius:22px; overflow:hidden; background:#080808; }
+.advancedBox summary { cursor:pointer; padding:15px 16px; font-weight:900; list-style:none; display:flex; justify-content:space-between; align-items:center; }
+.advancedBox summary::-webkit-details-marker { display:none; }
+.advancedBox summary::after { content:'+'; color:#999; font-size:20px; line-height:1; }
+.advancedBox[open] summary::after { content:'−'; }
+.advancedContent { display:grid; gap:13px; padding:0 16px 16px; border-top:1px solid #1f1f1f; }
+.connectedDiscordCard { margin:16px auto 0; width:min(320px,100%); min-height:78px; display:flex; align-items:center; gap:13px; text-align:left; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:22px; padding:13px; transition:transform .18s ease, opacity .18s ease; }
+.connectedDiscordCard:hover { transform:translateY(-2px); opacity:.9; }
+.connectedDiscordCard img, .connectedDiscordCard .discordFallback { width:52px; height:52px; border-radius:16px; object-fit:cover; flex:0 0 auto; }
+.connectedDiscordCard strong { display:block; font-size:18px; letter-spacing:-.04em; }
+.connectedDiscordCard small { display:block; margin-top:3px; color:var(--muted); font-size:12px; font-weight:800; text-transform:lowercase; }
+@media (max-width:520px) { .discordConnectBox { align-items:flex-start; flex-direction:column; } .smallBtn { width:100%; } }

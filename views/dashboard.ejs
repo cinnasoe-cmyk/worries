@@ -3,45 +3,74 @@
   <div>
     <p class="eyebrow">dashboard</p>
     <h1>edit your worries page.</h1>
-    <p>Your public page: <a href="/u/<%= currentUser.username %>" target="_blank"><%= baseUrl %>/u/<%= currentUser.username %></a></p>
+    <p>Your public page: <a href="/<%= currentUser.username %>" target="_blank"><%= baseUrl %>/<%= currentUser.username %></a></p>
   </div>
   <div class="badge"><%= currentUser.is_vip ? 'VIP' : 'FREE' %></div>
 </section>
 <% if (saved) { %><p class="success">saved.</p><% } %>
+<% if (error) { %>
+  <p class="error">
+    <% if (error === 'discord_env_missing') { %>
+      Discord is not set up yet. Add DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET in Render.
+    <% } else if (error === 'discord_state') { %>
+      Discord connection expired. Try connecting again.
+    <% } else { %>
+      Discord connection failed. Check your Discord app redirect URL and try again.
+    <% } %>
+  </p>
+<% } %>
 <section class="dashboardGrid">
   <form method="post" action="/dashboard/profile" class="panel form">
     <h2>profile</h2>
     <label>Display name<input name="display_name" value="<%= profile.display_name || '' %>" maxlength="60"></label>
     <label>Bio<textarea name="bio" maxlength="220"><%= profile.bio || '' %></textarea></label>
     <label>Profile picture URL<input name="pfp_url" value="<%= profile.pfp_url || '' %>" placeholder="https://..."></label>
-    <label>Banner image URL<input name="banner_url" value="<%= profile.banner_url || '' %>" placeholder="https://..."></label>
-    <label>Discord ID or username<input name="discord_id" value="<%= profile.discord_id || '' %>" placeholder="your Discord"></label>
-    <label>Status
-      <select name="discord_status">
-        <% ['online','idle','dnd','offline'].forEach(s => { %>
-          <option value="<%= s %>" <%= profile.discord_status === s ? 'selected' : '' %>><%= s %></option>
-        <% }) %>
-      </select>
-    </label>
-    <div class="row2">
-      <label>Background<input type="color" name="background_color" value="<%= profile.background_color || '#050505' %>"></label>
-      <label>Text<input type="color" name="text_color" value="<%= profile.text_color || '#ffffff' %>"></label>
-      <label>Accent<input type="color" name="accent_color" value="<%= profile.accent_color || '#ffffff' %>"></label>
+
+    <div class="discordConnectBox">
+      <div class="discordLeft">
+        <% if (profile.discord_avatar_url) { %>
+          <img class="discordAvatar" src="<%= profile.discord_avatar_url %>" alt="Discord avatar">
+        <% } else { %>
+          <div class="discordAvatar empty">!</div>
+        <% } %>
+        <div>
+          <strong><%= profile.discord_global_name || profile.discord_username || 'Discord account' %></strong>
+          <p><%= profile.discord_id ? '@' + profile.discord_username : 'Connect your Discord to show it on your page.' %></p>
+        </div>
+      </div>
+      <% if (profile.discord_id) { %>
+        <button class="ghostButton smallBtn" type="submit" formaction="/dashboard/discord/disconnect" formmethod="post">disconnect</button>
+      <% } else { %>
+        <a class="secondary smallBtn" href="/auth/discord">connect discord</a>
+      <% } %>
     </div>
-    <label>Button style
-      <select name="button_style">
-        <% ['glass','solid','outline'].forEach(s => { %>
-          <option value="<%= s %>" <%= profile.button_style === s ? 'selected' : '' %>><%= s %></option>
-        <% }) %>
-      </select>
-    </label>
-    <label>VIP font
-      <input name="font_family" value="<%= profile.font_family || 'Inter' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="Inter, Arial, serif">
-    </label>
-    <label>VIP music URL
-      <input name="music_url" value="<%= profile.music_url || '' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="direct .mp3 URL">
-    </label>
-    <label class="check"><input type="checkbox" name="show_views" <%= profile.show_views ? 'checked' : '' %>> show view count</label>
+
+    <details class="advancedBox">
+      <summary>Advanced</summary>
+      <div class="advancedContent">
+        <label>Banner image URL<input name="banner_url" value="<%= profile.banner_url || '' %>" placeholder="https://..."></label>
+        <div class="row2">
+          <label>Background<input type="color" name="background_color" value="<%= profile.background_color || '#050505' %>"></label>
+          <label>Text<input type="color" name="text_color" value="<%= profile.text_color || '#ffffff' %>"></label>
+          <label>Accent<input type="color" name="accent_color" value="<%= profile.accent_color || '#ffffff' %>"></label>
+        </div>
+        <label>Button style
+          <select name="button_style">
+            <% ['glass','solid','outline'].forEach(s => { %>
+              <option value="<%= s %>" <%= profile.button_style === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>VIP font
+          <input name="font_family" value="<%= profile.font_family || 'Inter' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="Inter, Arial, serif">
+        </label>
+        <label>VIP music URL
+          <input name="music_url" value="<%= profile.music_url || '' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="direct .mp3 URL">
+        </label>
+        <label class="check"><input type="checkbox" name="show_views" <%= profile.show_views ? 'checked' : '' %>> show view count</label>
+      </div>
+    </details>
+
     <button class="primary full" type="submit">save profile</button>
   </form>
 

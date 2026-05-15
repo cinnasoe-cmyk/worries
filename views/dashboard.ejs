@@ -47,7 +47,11 @@
     </div>
 
     <div class="uploadField">
-      <label>Profile picture upload<input type="file" name="pfp_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+      <label class="uploadButtonLabel">Profile picture upload
+        <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
+        <input type="file" name="pfp_file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <em class="fileName" data-file-name>No file selected</em>
+      </label>
       <% if (profile.pfp_url) { %>
         <div class="currentUpload"><img src="<%= profile.pfp_url %>" alt="current profile picture"><span>uploaded profile picture saved</span><label class="check miniCheck"><input type="checkbox" name="clear_pfp"> remove</label></div>
       <% } %>
@@ -77,7 +81,11 @@
       <summary>Advanced</summary>
       <div class="advancedContent">
         <div class="uploadField">
-          <label>Banner image upload<input type="file" name="banner_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+          <label class="uploadButtonLabel">Banner image upload
+            <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
+            <input type="file" name="banner_file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <em class="fileName" data-file-name>No file selected</em>
+          </label>
           <% if (profile.banner_url) { %>
             <div class="currentUpload wide"><span style="background-image:url('<%= profile.banner_url %>')"></span><em>current banner saved</em><label class="check miniCheck"><input type="checkbox" name="clear_banner"> remove</label></div>
           <% } %>
@@ -106,7 +114,11 @@
           <input name="font_family" value="<%= profile.font_family || 'Inter' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="Inter, Arial, serif">
         </label>
         <div class="uploadField <%= currentUser.is_vip ? '' : 'lockedUpload' %>">
-          <label>VIP song upload <small>MP3 or WAV</small><input type="file" name="music_file" accept="audio/mpeg,audio/mp3,audio/wav" <%= currentUser.is_vip ? '' : 'disabled' %>></label>
+          <label class="uploadButtonLabel">VIP song upload <small>MP3 or WAV</small>
+          <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
+          <input type="file" name="music_file" accept="audio/mpeg,audio/mp3,audio/wav" <%= currentUser.is_vip ? '' : 'disabled' %>>
+          <em class="fileName" data-file-name>No file selected</em>
+        </label>
           <% if (profile.music_url && currentUser.is_vip) { %>
             <div class="currentUpload audioSaved"><span>♪</span><em>song saved and active</em><label class="check miniCheck"><input type="checkbox" name="clear_music"> remove</label></div>
           <% } else if (!currentUser.is_vip) { %>
@@ -125,7 +137,11 @@
     <form method="post" action="/dashboard/links/add" class="form compact" enctype="multipart/form-data">
       <input name="title" placeholder="button title" required>
       <input name="url" placeholder="link URL" required>
-      <label class="fileOnly">Button icon upload<input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+      <label class="fileOnly uploadButtonLabel">Button icon upload
+        <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
+        <input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <em class="fileName" data-file-name>No file selected</em>
+      </label>
       <button class="secondary full" type="submit">add link</button>
     </form>
     <div class="linkEditor">
@@ -133,7 +149,11 @@
         <form class="linkEdit" method="post" action="/dashboard/links/<%= link.id %>/update" enctype="multipart/form-data">
           <input name="title" value="<%= link.title %>">
           <input name="url" value="<%= link.url %>">
-          <label class="fileOnly">Change icon<input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+          <label class="fileOnly uploadButtonLabel">Change icon
+          <span class="uploadButton"><span class="clipIcon">📎</span> upload</span>
+          <input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif">
+          <em class="fileName" data-file-name>No file selected</em>
+        </label>
           <% if (link.icon_url) { %><div class="currentUpload smallIcon"><img src="<%= link.icon_url %>" alt="current icon"><span>icon saved</span><label class="check miniCheck"><input type="checkbox" name="clear_icon"> remove</label></div><% } %>
           <input name="position" type="number" value="<%= link.position %>">
           <label class="check"><input name="is_visible" type="checkbox" <%= link.is_visible ? 'checked' : '' %>> visible</label>

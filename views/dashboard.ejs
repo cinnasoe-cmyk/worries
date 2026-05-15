@@ -15,16 +15,44 @@
     <% } else if (error === 'discord_state') { %>
       Discord connection expired. Try connecting again.
     <% } else { %>
-      Discord connection failed. Check your Discord app redirect URL and try again.
+      Something failed. Check your settings and try again.
     <% } %>
   </p>
 <% } %>
 <section class="dashboardGrid">
-  <form method="post" action="/dashboard/profile" class="panel form">
+  <form method="post" action="/dashboard/profile" class="panel form" enctype="multipart/form-data">
     <h2>profile</h2>
     <label>Display name<input name="display_name" value="<%= profile.display_name || '' %>" maxlength="60"></label>
     <label>Bio<textarea name="bio" maxlength="220"><%= profile.bio || '' %></textarea></label>
-    <label>Profile picture URL<input name="pfp_url" value="<%= profile.pfp_url || '' %>" placeholder="https://..."></label>
+
+    <% const canUseDiscordPfp = Boolean(profile.discord_id && profile.discord_avatar_url); %>
+    <% const activePfpSource = profile.pfp_source === 'discord' && canUseDiscordPfp ? 'discord' : 'upload'; %>
+    <div class="pfpChoiceBox">
+      <p class="fieldTitle">Profile picture source</p>
+      <label class="pfpOption <%= activePfpSource === 'upload' ? 'active' : '' %>">
+        <input type="radio" name="pfp_source" value="upload" <%= activePfpSource === 'upload' ? 'checked' : '' %>>
+        <span>
+          <strong>Upload my own</strong>
+          <small>Use a profile picture from your PC.</small>
+        </span>
+      </label>
+      <label class="pfpOption <%= activePfpSource === 'discord' ? 'active' : '' %> <%= canUseDiscordPfp ? '' : 'disabled' %>">
+        <input type="radio" name="pfp_source" value="discord" <%= activePfpSource === 'discord' ? 'checked' : '' %> <%= canUseDiscordPfp ? '' : 'disabled' %>>
+        <% if (canUseDiscordPfp) { %><img src="<%= profile.discord_avatar_url %>" alt="Discord profile picture"><% } else { %><span class="miniDiscordLock">!</span><% } %>
+        <span>
+          <strong>Use Discord profile picture</strong>
+          <small><%= canUseDiscordPfp ? 'Uses your connected Discord avatar.' : 'Connect Discord first to unlock this option.' %></small>
+        </span>
+      </label>
+    </div>
+
+    <div class="uploadField">
+      <label>Profile picture upload<input type="file" name="pfp_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+      <% if (profile.pfp_url) { %>
+        <div class="currentUpload"><img src="<%= profile.pfp_url %>" alt="current profile picture"><span>uploaded profile picture saved</span><label class="check miniCheck"><input type="checkbox" name="clear_pfp"> remove</label></div>
+      <% } %>
+      <% if (activePfpSource === 'discord') { %><p class="tiny">Your public page is currently using your Discord avatar.</p><% } %>
+    </div>
 
     <div class="discordConnectBox">
       <div class="discordLeft">
@@ -48,12 +76,25 @@
     <details class="advancedBox">
       <summary>Advanced</summary>
       <div class="advancedContent">
-        <label>Banner image URL<input name="banner_url" value="<%= profile.banner_url || '' %>" placeholder="https://..."></label>
-        <div class="row2">
-          <label>Background<input type="color" name="background_color" value="<%= profile.background_color || '#050505' %>"></label>
-          <label>Text<input type="color" name="text_color" value="<%= profile.text_color || '#ffffff' %>"></label>
-          <label>Accent<input type="color" name="accent_color" value="<%= profile.accent_color || '#ffffff' %>"></label>
+        <div class="uploadField">
+          <label>Banner image upload<input type="file" name="banner_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+          <% if (profile.banner_url) { %>
+            <div class="currentUpload wide"><span style="background-image:url('<%= profile.banner_url %>')"></span><em>current banner saved</em><label class="check miniCheck"><input type="checkbox" name="clear_banner"> remove</label></div>
+          <% } %>
         </div>
+
+        <div class="row2 colorRows">
+          <label class="colorField">Background
+            <div class="colorPick"><input type="color" name="background_color" value="<%= profile.background_color || '#050505' %>"><span><%= profile.background_color || '#050505' %></span></div>
+          </label>
+          <label class="colorField">Text
+            <div class="colorPick"><input type="color" name="text_color" value="<%= profile.text_color || '#ffffff' %>"><span><%= profile.text_color || '#ffffff' %></span></div>
+          </label>
+          <label class="colorField">Accent
+            <div class="colorPick"><input type="color" name="accent_color" value="<%= profile.accent_color || '#ffffff' %>"><span><%= profile.accent_color || '#ffffff' %></span></div>
+          </label>
+        </div>
+
         <label>Button style
           <select name="button_style">
             <% ['glass','solid','outline'].forEach(s => { %>
@@ -64,9 +105,14 @@
         <label>VIP font
           <input name="font_family" value="<%= profile.font_family || 'Inter' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="Inter, Arial, serif">
         </label>
-        <label>VIP music URL
-          <input name="music_url" value="<%= profile.music_url || '' %>" <%= currentUser.is_vip ? '' : 'disabled' %> placeholder="direct .mp3 URL">
-        </label>
+        <div class="uploadField <%= currentUser.is_vip ? '' : 'lockedUpload' %>">
+          <label>VIP song upload <small>MP3 or WAV</small><input type="file" name="music_file" accept="audio/mpeg,audio/mp3,audio/wav" <%= currentUser.is_vip ? '' : 'disabled' %>></label>
+          <% if (profile.music_url && currentUser.is_vip) { %>
+            <div class="currentUpload audioSaved"><span>♪</span><em>song saved and active</em><label class="check miniCheck"><input type="checkbox" name="clear_music"> remove</label></div>
+          <% } else if (!currentUser.is_vip) { %>
+            <p class="tiny">Upgrade to VIP to upload an MP3/WAV song for your page.</p>
+          <% } %>
+        </div>
         <label class="check"><input type="checkbox" name="show_views" <%= profile.show_views ? 'checked' : '' %>> show view count</label>
       </div>
     </details>
@@ -76,18 +122,19 @@
 
   <div class="panel">
     <h2>links</h2>
-    <form method="post" action="/dashboard/links/add" class="form compact">
+    <form method="post" action="/dashboard/links/add" class="form compact" enctype="multipart/form-data">
       <input name="title" placeholder="button title" required>
       <input name="url" placeholder="link URL" required>
-      <input name="icon_url" placeholder="optional icon URL">
+      <label class="fileOnly">Button icon upload<input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
       <button class="secondary full" type="submit">add link</button>
     </form>
     <div class="linkEditor">
       <% links.forEach(link => { %>
-        <form class="linkEdit" method="post" action="/dashboard/links/<%= link.id %>/update">
+        <form class="linkEdit" method="post" action="/dashboard/links/<%= link.id %>/update" enctype="multipart/form-data">
           <input name="title" value="<%= link.title %>">
           <input name="url" value="<%= link.url %>">
-          <input name="icon_url" value="<%= link.icon_url || '' %>" placeholder="icon URL">
+          <label class="fileOnly">Change icon<input type="file" name="icon_file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+          <% if (link.icon_url) { %><div class="currentUpload smallIcon"><img src="<%= link.icon_url %>" alt="current icon"><span>icon saved</span><label class="check miniCheck"><input type="checkbox" name="clear_icon"> remove</label></div><% } %>
           <input name="position" type="number" value="<%= link.position %>">
           <label class="check"><input name="is_visible" type="checkbox" <%= link.is_visible ? 'checked' : '' %>> visible</label>
           <button class="ghostButton" type="submit">save</button>

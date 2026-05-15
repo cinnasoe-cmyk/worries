@@ -1,16 +1,17 @@
 {
   "name": "worries",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A customizable link-in-bio website for online people.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
+  "engines": {
+    "node": ">=20 <25"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^9.6.0",
-    "connect-sqlite3": "^0.9.15",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",

@@ -11,14 +11,19 @@
   </style>
 </head>
 <body class="publicPage">
+  <% const publicAvatarUrl = profile.pfp_source === 'discord' && profile.discord_avatar_url ? profile.discord_avatar_url : (profile.pfp_url || '/img/default-avatar.svg'); %>
   <% if (profile.music_url) { %>
-    <audio id="pageAudio" loop src="<%= profile.music_url %>"></audio>
-    <button class="musicToggle" data-music-toggle>play music</button>
+    <audio id="pageAudio" loop preload="auto" src="<%= profile.music_url %>"></audio>
+    <div class="volumeKnob" data-audio-control>
+      <button type="button" data-music-toggle aria-label="play or pause page song">♪</button>
+      <input type="range" min="0" max="100" value="45" data-volume-slider aria-label="page song volume">
+      <span data-volume-label>45</span>
+    </div>
   <% } %>
   <main class="publicWrap">
     <section class="publicCard">
       <% if (profile.banner_url) { %><div class="publicBanner" style="background-image:url('<%= profile.banner_url %>')"></div><% } %>
-      <img class="publicAvatar" src="<%= profile.pfp_url || '/img/default-avatar.svg' %>" onerror="this.src='/img/default-avatar.svg'" alt="profile picture">
+      <img class="publicAvatar" src="<%= publicAvatarUrl %>" onerror="this.src='/img/default-avatar.svg'" alt="profile picture">
       <h1><%= profile.display_name || user.username %></h1>
       <p class="publicUser">@<%= user.username %></p>
       <p class="publicBio"><%= profile.bio %></p>

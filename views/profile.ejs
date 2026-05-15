@@ -22,7 +22,21 @@
       <h1><%= profile.display_name || user.username %></h1>
       <p class="publicUser">@<%= user.username %></p>
       <p class="publicBio"><%= profile.bio %></p>
-      <% if (profile.discord_id) { %><p class="discordLine"><span class="dot <%= profile.discord_status %>"></span><%= profile.discord_id %></p><% } %>
+
+      <% if (profile.discord_id) { %>
+        <a class="connectedDiscordCard" href="https://discord.com/users/<%= profile.discord_id %>" target="_blank" rel="noopener noreferrer">
+          <% if (profile.discord_avatar_url) { %>
+            <img src="<%= profile.discord_avatar_url %>" alt="Discord avatar">
+          <% } else { %>
+            <span class="discordFallback">!</span>
+          <% } %>
+          <span>
+            <strong><%= profile.discord_global_name || profile.discord_username %></strong>
+            <small>connected discord</small>
+          </span>
+        </a>
+      <% } %>
+
       <div class="publicLinks">
         <% links.forEach(link => { %>
           <a class="publicBtn <%= profile.button_style %>" href="<%= link.url %>" target="_blank" rel="noopener noreferrer">

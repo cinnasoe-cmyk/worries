@@ -13,11 +13,12 @@
 <body class="publicPage">
   <% const publicAvatarUrl = profile.pfp_source === 'discord' && profile.discord_avatar_url ? profile.discord_avatar_url : (profile.pfp_url || '/img/default-avatar.svg'); %>
   <% if (profile.music_url) { %>
-    <audio id="pageAudio" loop preload="auto" src="<%= profile.music_url %>"></audio>
-    <div class="volumeKnob" data-audio-control>
+    <audio id="pageAudio" loop preload="auto" playsinline src="<%= profile.music_url %>"></audio>
+    <div class="volumeKnob" data-audio-control data-needs-start="false">
       <button type="button" data-music-toggle aria-label="play or pause page song">♪</button>
       <input type="range" min="0" max="100" value="45" data-volume-slider aria-label="page song volume">
       <span data-volume-label>45</span>
+      <small data-music-hint>tap to play</small>
     </div>
   <% } %>
   <main class="publicWrap">

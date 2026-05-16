@@ -28,20 +28,20 @@ function setAudioVolume(value) {
 function setMusicState(isPlaying, blocked = false) {
   if (musicButton) musicButton.classList.toggle('playing', Boolean(isPlaying));
   if (audioControl) audioControl.dataset.needsStart = blocked ? 'true' : 'false';
-  if (musicHint) musicHint.textContent = blocked ? 'tap to play' : (isPlaying ? 'playing' : 'paused');
+  if (musicHint) musicHint.textContent = isPlaying ? 'playing' : 'paused';
 }
 
-async function startProfileSong({ fromUserGesture = false } = {}) {
+async function startProfileSong() {
   if (!audio || visitorPausedMusic) return false;
 
   try {
+    audio.muted = false;
     await audio.play();
     setMusicState(true, false);
     return true;
   } catch (err) {
-    // Most browsers block autoplay with sound until the visitor interacts.
-    // After the first click/touch/key press, this function is called again and the song starts.
-    if (!fromUserGesture) setMusicState(false, true);
+    // Browsers can block autoplay with sound. We keep the UI clean and silently retry.
+    setMusicState(false, true);
     return false;
   }
 }
@@ -57,11 +57,13 @@ if (audio) {
   audio.addEventListener('play', () => setMusicState(true, false));
   audio.addEventListener('pause', () => setMusicState(false, false));
 
-  // Try immediately for browsers that allow autoplay.
+  // Try immediately for browsers that allow autoplay with sound.
   startProfileSong();
+  document.addEventListener('DOMContentLoaded', startProfileSong, { once: true });
+  window.addEventListener('load', startProfileSong, { once: true });
 
-  // If autoplay is blocked, start on the visitor's first page interaction.
-  const unlockSong = () => startProfileSong({ fromUserGesture: true });
+  // Silent fallback: if the browser blocks sound autoplay, the first normal page interaction unlocks it.
+  const unlockSong = () => startProfileSong();
   ['pointerdown', 'touchstart', 'keydown', 'click'].forEach((eventName) => {
     document.addEventListener(eventName, unlockSong, { once: true, passive: true });
   });
@@ -70,7 +72,7 @@ if (audio) {
 if (audio && volumeSlider) {
   volumeSlider.addEventListener('input', () => {
     setAudioVolume(volumeSlider.value);
-    if (audio.paused && !visitorPausedMusic) startProfileSong({ fromUserGesture: true });
+    if (audio.paused && !visitorPausedMusic) startProfileSong();
   });
 }
 
@@ -82,7 +84,7 @@ document.addEventListener('click', async (event) => {
 
   if (audio.paused) {
     visitorPausedMusic = false;
-    await startProfileSong({ fromUserGesture: true });
+    await startProfileSong();
   } else {
     visitorPausedMusic = true;
     audio.pause();

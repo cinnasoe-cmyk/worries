@@ -145,6 +145,45 @@ function boolNum(value) {
   return value ? 1 : 0;
 }
 
+function parseCookies(req) {
+  return Object.fromEntries(
+    String(req.headers.cookie || '')
+      .split(';')
+      .map(item => item.trim())
+      .filter(Boolean)
+      .map(item => {
+        const index = item.indexOf('=');
+        if (index === -1) return [item, ''];
+        return [decodeURIComponent(item.slice(0, index)), decodeURIComponent(item.slice(index + 1))];
+      })
+  );
+}
+
+function safeCookieName(value) {
+  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function countUniqueProfileView(req, res, profile, user) {
+  if (!profile || !user) return;
+
+  const cookieName = `worries_viewed_${safeCookieName(user.username || user.id)}`;
+  const cookies = parseCookies(req);
+
+  // This counts one view per browser/device for each profile.
+  // A different device/browser will not have this cookie, so it counts as a new view.
+  if (cookies[cookieName]) return;
+
+  profile.view_count = Number(profile.view_count || 0) + 1;
+
+  res.cookie(cookieName, '1', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 365
+  });
+}
+
+
 function getUserByUsername(username) {
   return data.users.find(user => user.username === username);
 }
@@ -207,7 +246,7 @@ function renderProfilePage(req, res, username) {
   if (!user) return res.status(404).render('error', { title: 'not found', message: 'That worries page does not exist.' });
 
   const profile = getProfile(user.id) || createDefaultProfile(user.id, user.username);
-  profile.view_count = Number(profile.view_count || 0) + 1;
+  countUniqueProfileView(req, res, profile, user);
   saveData();
 
   const links = getLinks(user.id).filter(link => link.is_visible);
